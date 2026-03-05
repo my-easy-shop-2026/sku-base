@@ -1,0 +1,84 @@
+server:
+  port: 8085
+
+sql:
+  limit-size: 3000
+
+spring:
+  application:
+    name: linkpay-card-base
+
+  datasource:
+    dynamic:
+      enabled: true #启用动态数据源，默认true
+      primary: master #设置默认的数据源或者数据源组,默认值即为master
+      strict: false #严格匹配数据源,默认false. true未匹配到指定数据源时抛异常,false使用默认数据源
+      grace-destroy: false #是否优雅关闭数据源，默认为false，设置为true时，关闭数据源时如果数据源中还存在活跃连接，至多等待10s后强制关闭
+      datasource:
+        master:
+          url: jdbc:mysql://linkpay-test-db.cjm4oce0uov9.ap-southeast-1.rds.amazonaws.com:3306/linkpay_card
+          username: devlinkpay
+          password: 'etmtduxp*nb!my8WRZ6'
+          driver-class-name: com.mysql.jdbc.Driver # 3.2.0开始支持SPI可省略此配置
+        slave_1:
+          url: jdbc:mysql://linkpay-test-db.cjm4oce0uov9.ap-southeast-1.rds.amazonaws.com:3306/linkpay_card
+          username: devlinkpay
+          password: 'etmtduxp*nb!my8WRZ6'
+          driver-class-name: com.mysql.jdbc.Driver # 3.2.0开始支持SPI可省略此配置
+
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 10.6.139.170:8848
+        group: "SERVICE_GROUP"
+    alibaba:
+      seata:
+        tx-service-group: my_test_tx_group
+
+# custom setting
+  auth:
+    accessTokenDuration: 600 #秒
+    refreshTokenDuration: 2592000 #秒
+
+logging:
+  level:
+    org:
+      springframework: INFO
+    com:
+      linkpay:
+        cardBase:
+          mapper: DEBUG
+    io:
+      seata: DEBUG
+
+seata:
+  enabled: true
+  data-source-proxy-mode: XA
+  application-id: ${spring.application.name}
+  tx-service-group: my_test_tx_group
+
+  #  config:
+  #    type: file
+  #    file:
+  #      name: resources/file.conf #!!!
+  registry:
+    type: nacos
+    nacos:
+      # 需要和 server 端保持一致，即 server 在 nacos 中的名称，默认为 seata-server
+      application: seata-server
+      server-addr: '10.6.139.170:8848'
+      namespace: ''
+      group: 'SEATA_GROUP'
+      username: 'nacos'
+      password: 'nacos'
+
+  service:
+    vgroupMapping:
+      my_test_tx_group: default
+    default:
+      grouplist: "10.6.139.170:8091"

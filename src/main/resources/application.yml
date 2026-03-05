@@ -1,0 +1,195 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: linkpay-user-base
+
+  datasource:
+    dynamic:
+      enabled: true #启用动态数据源，默认true
+      primary: master #设置默认的数据源或者数据源组,默认值即为master
+      strict: false #严格匹配数据源,默认false. true未匹配到指定数据源时抛异常,false使用默认数据源
+      grace-destroy: false #是否优雅关闭数据源，默认为false，设置为true时，关闭数据源时如果数据源中还存在活跃连接，至多等待10s后强制关闭
+      datasource:
+        master:
+          url: jdbc:mysql://127.0.0.1:3311/linkpay_card
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.jdbc.Driver # 3.2.0开始支持SPI可省略此配置
+        slave_1:
+          url: jdbc:mysql://127.0.0.1:3311/linkpay_card
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.jdbc.Driver
+
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        group: "SERVICE_GROUP"
+    alibaba:
+      seata:
+        tx-service-group: my_test_tx_group
+
+# custom setting
+  auth:
+    accessTokenDuration: 600 #秒
+    refreshTokenDuration: 2592000 #秒
+
+logging:
+  level:
+    org:
+      springframework: INFO
+    com:
+      linkpay:
+        cardBase:
+          mapper: DEBUG
+    io:
+      seata: DEBUG
+
+#seata:
+#  registry:
+#    type: nacos
+#    nacos:
+#      application: seata-server
+#      server-addr: 127.0.0.1:8848 # Nacos 注册中心的地址
+#      group: "SEATA_GROUP" #分组
+#      namespace: ""
+#        username: "nacos"   #Nacos 注册中心的用户名
+#        password: "nacos"   # Nacos 注册中心的密码
+
+seata:
+  enabled: true
+  application-id: linkpay-user-base
+  tx-service-group: default_tx_group
+#  access-key: aliyunAccessKey
+#  secret-key: aliyunSecretKey
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: XA
+  use-jdk-proxy: false
+  scan-packages: firstPackage,secondPackage
+  excludes-for-scanning: firstBeanNameForExclude,secondBeanNameForExclude
+  excludes-for-auto-proxying: firstClassNameForExclude,secondClassNameForExclude
+  client:
+    rm:
+      async-commit-buffer-limit: 10000
+      report-retry-count: 5
+      table-meta-check-enable: false
+      report-success-enable: false
+      saga-branch-register-enable: false
+      saga-json-parser: fastjson
+      saga-retry-persist-mode-update: false
+      saga-compensate-persist-mode-update: false
+      tcc-action-interceptor-order: -2147482648 #Ordered.HIGHEST_PRECEDENCE + 1000
+      sql-parser-type: druid
+      lock:
+        retry-interval: 10
+        retry-times: 30
+        retry-policy-branch-rollback-on-conflict: true
+    tm:
+      commit-retry-count: 5
+      rollback-retry-count: 5
+      default-global-transaction-timeout: 60000
+      degrade-check: false
+      degrade-check-period: 2000
+      degrade-check-allow-times: 10
+      interceptor-order: -2147482648 #Ordered.HIGHEST_PRECEDENCE + 1000
+    undo:
+      data-validation: true
+      log-serialization: jackson
+      log-table: undo_log
+      only-care-update-columns: true
+      compress:
+        enable: true
+        type: zip
+        threshold: 64k
+    load-balance:
+      type: XID
+      virtual-nodes: 10
+  service:
+    vgroup-mapping:
+      default_tx_group: default
+    grouplist:
+      default: 127.0.0.1:8091
+    enable-degrade: false
+    disable-global-transaction: false
+  transport:
+    shutdown:
+      wait: 3
+    thread-factory:
+      boss-thread-prefix: NettyBoss
+      worker-thread-prefix: NettyServerNIOWorker
+      server-executor-thread-prefix: NettyServerBizHandler
+      share-boss-worker: false
+      client-selector-thread-prefix: NettyClientSelector
+      client-selector-thread-size: 1
+      client-worker-thread-prefix: NettyClientWorkerThread
+      worker-thread-size: default
+      boss-thread-size: 1
+    type: TCP
+    server: NIO
+    heartbeat: true
+    serialization: seata
+    compressor: none
+    enable-tm-client-batch-send-request: false
+    enable-rm-client-batch-send-request: true
+    rpc-rm-request-timeout: 15000
+    rpc-tm-request-timeout: 30000
+  config:
+    type: file
+    nacos:
+      namespace:
+      server-addr: 127.0.0.1:8848
+      group: SEATA_GROUP
+      username:
+      password:
+      context-path:
+      ##if use MSE Nacos with auth, mutex with username/password attribute
+      #access-key:
+      #secret-key:
+      data-id: seata.properties
+  registry:
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: 127.0.0.1:8848
+      group : "SEATA_GROUP"
+      namespace:
+      username:
+      password:
+      context-path:
+      client-application: ${spring.application.name}
+      ##if use MSE Nacos with auth, mutex with username/password attribute
+      #access-key:
+      #secret-key:
+      ##if use Nacos naming meta-data for SLB service registry, specify nacos address pattern rules here
+      #slbPattern =
+
+  log:
+    exception-rate: 100
+  tcc:
+    fence:
+      log-table-name: tcc_fence_log
+      clean-period: 1h
+  saga:
+    enabled: false
+    state-machine:
+      table-prefix: seata_
+      enable-async: false
+      async-thread-pool:
+        core-pool-size: 1
+        max-pool-size: 20
+        keep-alive-time: 60
+      trans-operation-timeout: 1800000
+      service-invoke-timeout: 300000
+      auto-register-resources: true
+      resources:
+        - classpath*:seata/saga/statelang/**/*.json
+      default-tenant-id: 000001
+      charset: UTF-8
